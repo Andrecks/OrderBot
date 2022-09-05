@@ -1,7 +1,4 @@
-# from ast import pattern
 import os
-from xml.sax.handler import EntityResolver
-# from telegram.constants import ParseMode
 
 from dotenv import load_dotenv
 from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
@@ -58,31 +55,12 @@ def button(update: Update, context: CallbackContext) -> None:
         need_shipping_address=True,
         is_flexible=True,
     )
-    # query = update.callback_query
-    # user = update.effective_user.id
-    # send_message(user, f'йоу {query.data}')
-    # print(f'юзерайди = {user}')
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    # query.answer()
-
-    # query.delete_message()
 
 
 def inline_query(update: Update, context: CallbackContext) -> None:
     """Handle the inline query. This is run when you type: @botusername <query>"""
     query = update.inline_query.query
-    # First option has a single LabeledPrice
-    # options = [ShippingOption('1', 'Голубиная почта', [LabeledPrice('2 жирных голубя', 1000000)]),
-    #            ShippingOption('2', 'Почта России', [LabeledPrice('Почта России', 9000)]),
-    #            ShippingOption('3', 'Почта России (экспресс)', [LabeledPrice('Почта России (экспресс)', 148800)])]
     results = [
-        # InlineQueryResultArticle(
-        #     id='1',
-        #     title="большой текст",
-        #     input_message_content = InputTextMessageContent('оно работает боже как же заебись'),
-        #     thumb_url = 'https://2ch.hk/b/src/266160769/16492546145510.png',
-        # ),
         InlineQueryResultArticle(
             id = '1',
             title = 'Модная кепка',
