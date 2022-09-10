@@ -7,10 +7,9 @@ bd_unit = bdcontroller()
 
 class KeyboardController():
 
-    def main_menu():
+    def admin_main(self):
         keyboard = [[
             InlineKeyboardButton('Новые заказы', callback_data='unsent_orders'),
-            InlineKeyboardButton('', callback_data='unsent_orders'),
         ]]
 
         return keyboard

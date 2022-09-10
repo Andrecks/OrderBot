@@ -7,9 +7,12 @@ from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
                       ReplyKeyboardRemove, ReplyMarkup, SuccessfulPayment, Update, LabeledPrice, InputInvoiceMessageContent, ShippingOption)
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, InlineQueryHandler, Updater,
-                          ShippingQueryHandler, PreCheckoutQueryHandler, MessageHandler, Filters)
+                          ShippingQueryHandler, PreCheckoutQueryHandler, MessageHandler,
+                          Filters, callbackqueryhandler)
 from bd_control import bdcontroller
+from keyboard_controller import KeyboardController
 
+kb_unit = KeyboardController()
 bd_unit = bdcontroller()
 load_dotenv()
 
@@ -140,7 +143,13 @@ def successful_payment_callback(update: Update, context: CallbackContext):
 def admin_login(update: Update, context: CallbackContext):
     user_id = update.message.from_user.id
     if str(user_id) in ADMINS:
-        send_message(user_id, 'добро пожаловать в админку')
+        send_message(user_id, 'добро пожаловать в админку',
+        reply_markup=InlineKeyboardMarkup(kb_unit.admin_main()))
+
+
+def admin_new_orders(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+    send_message(user_id, 'тут будет список новых заказов')
 
 
 def main() -> None:
@@ -154,6 +163,7 @@ def main() -> None:
     dispatcher.add_handler(PreCheckoutQueryHandler(precheckout_callback))
     dispatcher.add_handler(MessageHandler(Filters.successful_payment, successful_payment_callback))
     dispatcher.add_handler(CommandHandler("admin", admin_login))
+    dispatcher.add_handler(CallbackQueryHandler(admin_new_orders, pattern=r'unsent_orders'))
     # dispatcher.add_handler(MessageHandler(filters.successfu))
     # Run the bot until the user presses Ctrl-C
     updater.start_polling()
