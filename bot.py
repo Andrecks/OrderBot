@@ -8,32 +8,27 @@ from telegram import (Bot, InlineKeyboardButton, InlineKeyboardMarkup,
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, InlineQueryHandler, Updater,
                           ShippingQueryHandler, PreCheckoutQueryHandler, MessageHandler, Filters)
+from bd_control import bdcontroller
 
+bd_unit = bdcontroller()
 load_dotenv()
+
+# добавляем админов по айди из .env
+# amdins = 123456789 123456789
+ADMINS = os.getenv('admins').split()
+
+# Токен проавдейра
 PAYMENT_PROVIDER_TOKEN = os.getenv('PAYMENT_PROVIDER_TOKEN')
-bot = Bot(token=os.getenv('TOKEN'))
-keyboard = [[
-    InlineKeyboardButton('Продолжить', callback_data='1'),
-]]
 bot = Bot(token=os.getenv('TOKEN'))
 updater = Updater(token=os.getenv('TOKEN'))
 dispatcher = updater.dispatcher
-
+items_for_order = {'kepo4ka': ['Кепка долбаеб', 1]}
+shipping_options = {1: 'Почта России',
+                    2: 'Почта России (экспресс)',
+                    3: 'Самовывоз'}
 
 def start(update: Update, context: CallbackContext) -> None:
-    """Sends a message with three inline buttons attached."""
-    keyboard = [
-        [
-            InlineKeyboardButton("Собаки", callback_data="Собаки"),
-            InlineKeyboardButton("Наруто Узумаки", callback_data="Наруто Узумаки"),
-        ],
-        [InlineKeyboardButton("Не собаки", callback_data="Не собаки")],
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    update.message.reply_text("Please choose:", reply_markup=reply_markup)
-
+    pass
 
 def send_message(user_id, message, **kwargs):
     return bot.send_message(chat_id=user_id, text=message, **kwargs)
@@ -113,24 +108,39 @@ def precheckout_callback(update: Update, context: CallbackContext) -> None:
         query.answer(ok=False, error_message="Something went wrong...")
     else:
         query.answer(ok=True)
+        # shipping_info = query.order_info.shipping_address
+        # # full_address = f'{shipping_info.street_line1}, {shipping_info.street_line2}'
+        # items_ordered = items_for_order[query.invoice_payload]
+        # sum_charged = f'{query.total_amount/100}.{str(query.total_amount)[-2:]}'
+        # bd_unit.create_order(full_address, shipping_info.post_code, query.order_info.name,
+        #                      items_ordered[0], sum_charged, query.from_user.id, items_ordered[1],
+        #                      shipping_options[query.shipping_option_id], query.id)
+        print(f'PRECHECKOUT {query}')
         # send_message(update.effective_user.id, 'Спасибо за покупку')
 
 
 def successful_payment_callback(update: Update, context: CallbackContext):
-    shipping_options = {1: 'Почта России',
-                        2: 'Почта России (экспресс)',
-                        3: 'Самовывоз'}
-    order_info = update.message.successful_payment.order_info.shipping_address
-    full_address = f'{order_info.street_line1}, {order_info.street_line2}'
-    city = order_info.city
-    zip_code = order_info.post_code
+    full_update = update.message.successful_payment
+    order_info = full_update.order_info
+    shipping_info = full_update.order_info.shipping_address
+    full_address = f'{shipping_info.street_line1}, {shipping_info.street_line2}'
+    items_ordered = items_for_order[full_update.invoice_payload]
+    sum_charged = f'{int(full_update.total_amount/100)}.{str(full_update.total_amount)[-2:]}'
+    # print(f'AFTER PAY {update.message.successful_payment}')
+    # print('--------')
+    zip_code = shipping_info.post_code
     shipping_option = shipping_options[int(update.message.successful_payment.shipping_option_id)]
-    print(full_address)
-    print(city)
-    print(zip_code)
-    print(shipping_option)
+    bd_unit.create_order(full_address, zip_code, order_info.name,
+                         items_ordered[0], sum_charged, update.message.from_user.id,
+                         items_ordered[1], f"'{shipping_options[int(full_update.shipping_option_id)]}'",
+                         bd_unit.generate_order_id(), f"'{shipping_info.city}'")
     send_message(update.effective_user.id, 'Спасибо за покупку')
 
+
+def admin_login(update: Update, context: CallbackContext):
+    user_id = update.message.from_user.id
+    if str(user_id) in ADMINS:
+        send_message(user_id, 'добро пожаловать в админку')
 
 
 def main() -> None:
@@ -143,7 +153,7 @@ def main() -> None:
     dispatcher.add_handler(ShippingQueryHandler(kepka_shipping))
     dispatcher.add_handler(PreCheckoutQueryHandler(precheckout_callback))
     dispatcher.add_handler(MessageHandler(Filters.successful_payment, successful_payment_callback))
-
+    dispatcher.add_handler(CommandHandler("admin", admin_login))
     # dispatcher.add_handler(MessageHandler(filters.successfu))
     # Run the bot until the user presses Ctrl-C
     updater.start_polling()
