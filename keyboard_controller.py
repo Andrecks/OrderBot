@@ -9,54 +9,45 @@ class KeyboardController():
 
     def admin_main(self):
         keyboard = [[
-            InlineKeyboardButton('Новые заказы', callback_data='unsent_orders'),
+            InlineKeyboardButton('Новые заказы', callback_data='unsent_page#1'),
         ]]
 
         return keyboard
 
-    # def continue_keyboard():
-    #     keyboard = [[
-    #         KeyboardButton('Продолжить', callback_data='1'),
-    #     ]]
-    #     return keyboard
+    def generate_text_for_order(self, order):
+        return(f'заказ №{order[0]}\nимя: {order[1]}')
 
-    # def yes_no_keyboard():
-    #     keyboard = [[
-    #         KeyboardButton('Да', callback_data='Да'),
-    #         KeyboardButton('Нет', callback_data='Нет'),
-    #     ]]
-    #     return keyboard
-
-    # def lider_keyboard(liders:list):
-    #     keyboard = [[
-    #         KeyboardButton(f'{liders[0]}', callback_data=f'{liders[0]}'),
-    #         KeyboardButton(f'{liders[1]}', callback_data=f'{liders[1]}')],
-    #         [
-    #         KeyboardButton(f'{liders[2]}', callback_data=f'{liders[2]}'),
-    #         KeyboardButton(f'{liders[3]}', callback_data=f'{liders[3]}'),
-    #     ]]
-    #     return keyboard
-
-    # def in_lider_keyboard(liders:list):
-    #     keyboard = [[
-    #         InlineKeyboardButton(f'{liders[0]}', callback_data=f'vote_{liders[0]}'),
-    #         InlineKeyboardButton(f'{liders[1]}', callback_data=f'vote_{liders[1]}')],
-    #         [
-    #         InlineKeyboardButton(f'{liders[2]}', callback_data=f'vote_{liders[2]}'),
-    #         InlineKeyboardButton(f'{liders[3]}', callback_data=f'vote_{liders[3]}'),
-    #     ]]
-    #     return keyboard
-
-    # def in_continue_keyboard():
-    #     keyboard = [[
-    #         InlineKeyboardButton('Продолжить', callback_data='1'),
-    #     ]]
-    #     return keyboard
+    def generate_full_order(self, order_id):
+        order_details = bd_unit.get_order_info(order_id)
+        return(f'Город: {order_details[0]}\nАдрес: {order_details[1]}\n'
+        f'Индекс: {order_details[2]}\n'
+        f'Имя: {order_details[3]}\n'
+        f'Способ доставки: {order_details[4]}\n'
+        f'Товар: {order_details[5]}\n'
+        f'Количество: {order_details[6]}\n')
 
 
-    # def in_yes_no_keyboard():
-    #     keyboard = [[
-    #         InlineKeyboardButton('Да', callback_data='notify_Да'),
-    #         InlineKeyboardButton('Нет', callback_data='notify_Нет'),
-    #     ]]
-    #     return keyboard
+    def admin_order_info(self, order_id):
+        return([
+            [InlineKeyboardButton('отметить как отправленный', callback_data=f'shipped_out#{order_id}#True')],
+            [InlineKeyboardButton('отметить как неотправленный', callback_data=f'shipped_out#{order_id}#False')],
+            [InlineKeyboardButton('вернуться к новым заказам', callback_data=f'unsent_page#1')],
+            [InlineKeyboardButton('завершить сессию', callback_data=f'close_session')]
+                    ])
+
+    def build_orders_keyboard(self, orders):
+        keyboard = []
+        for order in orders:
+            keyboard.append([InlineKeyboardButton(text=self.generate_text_for_order(order), callback_data=f'order#{order[0]}')])
+        keyboard.append([InlineKeyboardButton('завершить сессию', callback_data=f'close_session')])
+        return keyboard
+
+    # def get_orders_for_page(self, page, max_page, order_count, order_per_page):
+    #     if page >= max_page:
+    #         limit = order_count%order_per_page
+    #         if limit != 0:
+    #             orders = bd_unit.get_x_last_unsent_orders(limit)
+    #             return(self.build_orders_keyboard(orders))
+        #TODO: добавить пагинацию страниц кроме последней
+
+

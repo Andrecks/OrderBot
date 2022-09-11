@@ -9,6 +9,7 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, InlineQueryHandler, Updater,
                           ShippingQueryHandler, PreCheckoutQueryHandler, MessageHandler,
                           Filters, callbackqueryhandler)
+from telegram_bot_pagination import InlineKeyboardPaginator
 from bd_control import bdcontroller
 from keyboard_controller import KeyboardController
 
@@ -29,6 +30,10 @@ items_for_order = {'kepo4ka': ['Кепка долбаеб', 1]}
 shipping_options = {1: 'Почта России',
                     2: 'Почта России (экспресс)',
                     3: 'Самовывоз'}
+
+
+ORDERS_PER_PAGE = 5  #  количество отображаемых заказов на странице в админке
+
 
 def start(update: Update, context: CallbackContext) -> None:
     pass
@@ -111,15 +116,6 @@ def precheckout_callback(update: Update, context: CallbackContext) -> None:
         query.answer(ok=False, error_message="Something went wrong...")
     else:
         query.answer(ok=True)
-        # shipping_info = query.order_info.shipping_address
-        # # full_address = f'{shipping_info.street_line1}, {shipping_info.street_line2}'
-        # items_ordered = items_for_order[query.invoice_payload]
-        # sum_charged = f'{query.total_amount/100}.{str(query.total_amount)[-2:]}'
-        # bd_unit.create_order(full_address, shipping_info.post_code, query.order_info.name,
-        #                      items_ordered[0], sum_charged, query.from_user.id, items_ordered[1],
-        #                      shipping_options[query.shipping_option_id], query.id)
-        print(f'PRECHECKOUT {query}')
-        # send_message(update.effective_user.id, 'Спасибо за покупку')
 
 
 def successful_payment_callback(update: Update, context: CallbackContext):
@@ -141,16 +137,72 @@ def successful_payment_callback(update: Update, context: CallbackContext):
 
 
 def admin_login(update: Update, context: CallbackContext):
+    # update.callback_query.answer()
     user_id = update.message.from_user.id
     if str(user_id) in ADMINS:
+        update.message.delete()
         send_message(user_id, 'добро пожаловать в админку',
         reply_markup=InlineKeyboardMarkup(kb_unit.admin_main()))
 
 
 def admin_new_orders(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    send_message(user_id, 'тут будет список новых заказов')
 
+    user_id = update.effective_user.id
+    query =  update.callback_query
+   
+    # query.answer()
+    if str(user_id) in ADMINS:
+        update.callback_query.delete_message()
+
+        page = int(query.data.split('#')[1])
+        unsent_orders_count = bd_unit.get_all_unsent_orders()
+        MAX_PAGES = unsent_orders_count // ORDERS_PER_PAGE + 1
+        # пагинатор в ифе, можно от него избавиться
+        if unsent_orders_count > ORDERS_PER_PAGE:
+            paginator = InlineKeyboardPaginator(
+            MAX_PAGES,  # формула подсчета пагинатора
+            current_page=page,
+            data_pattern='unsent_page#{page}'
+        )
+            paginator.add_before(kb_unit.get_orders_for_page(page, MAX_PAGES, unsent_orders_count, ORDERS_PER_PAGE))
+        else:
+
+            reply_markup = InlineKeyboardMarkup(kb_unit.build_orders_keyboard(bd_unit.get_x_last_unsent_orders(limit=unsent_orders_count)))
+            send_message(user_id, f'всего новых заказов: {bd_unit.get_all_unsent_orders()}',
+                     reply_markup=reply_markup)
+
+def get_full_order_info(update: Update, context: CallbackContext):
+    
+    user_id = update.effective_user.id
+    query =  update.callback_query
+    
+    if str(user_id) in ADMINS:
+        update.callback_query.delete_message()
+        order_id = int(query.data.split('#')[1])
+        send_message(user_id, kb_unit.generate_full_order(order_id),
+                     reply_markup=InlineKeyboardMarkup(kb_unit.admin_order_info(order_id)))
+
+def set_order_shipped_out(update: Update, context: CallbackContext):
+
+    query =  update.callback_query
+    user_id = update.effective_user.id
+ 
+    if str(user_id) in ADMINS:
+        order_id = int(query.data.split('#')[1])
+        shipped_flag = query.data.split('#')[2]
+        reply_markup = InlineKeyboardMarkup(kb_unit.admin_order_info(order_id))
+        if shipped_flag == 'True':
+            bd_unit.set_shipped_out(order_id, shipped_flag)
+            update.callback_query.edit_message_text(f'заказ #{order_id} отмечен как отправленный', reply_markup=reply_markup)
+        else:
+            bd_unit.set_shipped_out(order_id, shipped_flag)
+            update.callback_query.edit_message_text(f'заказ #{order_id} отмечен как неотправленный', reply_markup=reply_markup)
+
+def close_session(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+
+    if str(user_id) in ADMINS:
+        update.callback_query.edit_message_reply_markup(reply_markup=None)
 
 def main() -> None:
     """Run the bot."""
@@ -163,7 +215,10 @@ def main() -> None:
     dispatcher.add_handler(PreCheckoutQueryHandler(precheckout_callback))
     dispatcher.add_handler(MessageHandler(Filters.successful_payment, successful_payment_callback))
     dispatcher.add_handler(CommandHandler("admin", admin_login))
-    dispatcher.add_handler(CallbackQueryHandler(admin_new_orders, pattern=r'unsent_orders'))
+    dispatcher.add_handler(CallbackQueryHandler(admin_new_orders, pattern=r'unsent_page#'))  # paginator
+    dispatcher.add_handler(CallbackQueryHandler(get_full_order_info, pattern=r'order#'))
+    dispatcher.add_handler(CallbackQueryHandler(set_order_shipped_out, pattern=r'shipped_out#'))
+    dispatcher.add_handler(CallbackQueryHandler(close_session, pattern=r'close_session'))
     # dispatcher.add_handler(MessageHandler(filters.successfu))
     # Run the bot until the user presses Ctrl-C
     updater.start_polling()
