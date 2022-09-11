@@ -84,6 +84,7 @@ def inline_query(update: Update, context: CallbackContext) -> None:
                 need_name=True,
                 is_flexible=True,
                 shipping_options=True,
+                need_shipping_address=True
                 ),
 
         ),
@@ -115,6 +116,7 @@ def precheckout_callback(update: Update, context: CallbackContext) -> None:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
     else:
+        #TODO: Запилить проверку курьерской доставки по Мск
         query.answer(ok=True)
 
 
