@@ -14,12 +14,12 @@ class otpravka():
     url = 'https://otpravka-api.pochta.ru/1.0/tariff'
 
  
-    def get_price(self, full_adress, index):
+    def get_price(self, index_from, index_to):
         file = open('tariff.json')
         data = json.load(file)
         headers = {
-        'Authorization': 'AccessToken 94EgbSPrglChjiZtmY7it2iSjJXP6ZN3',
-        'X-User-Authorization': 'Basic Kzc5MTY2NDc3OTU0Omdvb2dpbjMyMQ==',
+        'Authorization': f'AccessToken {PR_TOKEN}',
+        'X-User-Authorization': f'Basic {PR_KEY}',
         'Content-Type': 'application/json;charset=UTF-8'
     }
         response = requests.post(self.url, headers=headers, json=data)
