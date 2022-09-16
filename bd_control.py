@@ -13,8 +13,8 @@ class bdcontroller:
 
     def create_order(self, full_address, index, full_name,
                      item_ordered, amount_charged,
-                     customer_id, quantity, shipping_method, order_id, city):
-        self.cur.execute(f"INSERT INTO orders(full_address, index, full_name, item_ordered, amount_charged, order_status, customer_id, quantity, shipping_method, order_id, city) VALUES ('{full_address}', {index}, '{full_name}', '{item_ordered}', {amount_charged}, 'Принят', {customer_id}, {quantity}, {shipping_method}, {order_id}, {city});")
+                     customer_id, quantity, shipping_method, order_id, city, phone):
+        self.cur.execute(f"INSERT INTO orders(full_address, index, full_name, item_ordered, amount_charged, order_status, customer_id, quantity, shipping_method, order_id, city, phone_number) VALUES ('{full_address}', {index}, '{full_name}', '{item_ordered}', {amount_charged}, 'Принят', {customer_id}, {quantity}, {shipping_method}, {order_id}, {city}, {phone});")
         self.conn.commit()
 
     def generate_order_id(self):

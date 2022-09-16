@@ -84,7 +84,8 @@ def inline_query(update: Update, context: CallbackContext) -> None:
                 need_name=True,
                 is_flexible=True,
                 shipping_options=True,
-                need_shipping_address=True
+                need_shipping_address=True,
+                need_phone_number=True,
                 ),
 
         ),
@@ -94,15 +95,16 @@ def inline_query(update: Update, context: CallbackContext) -> None:
 def kepka_shipping(update: Update, context: CallbackContext) -> None:
     """Answers the ShippingQuery with ShippingOptions"""
     query = update.shipping_query
+    country_code = query.shipping_address.country_code
     # check the payload, is this from your bot?
-    if query.invoice_payload != 'kepo4ka':
+    if (query.invoice_payload != 'kepo4ka') or country_code != 'RU':
         # answer False pre_checkout_query
         query.answer(ok=False, error_message='Что-то пошло не так...')
         return
-
+    print(f'SHIPPING HERE {query}')
     # First option has a single LabeledPrice
     options = [ShippingOption('1', 'Почта России', [LabeledPrice('Почта России', 9000)]),
-               ShippingOption('2', 'Почта России (экспресс)', [LabeledPrice('Почта России (экспресс)', 148800)]),
+            #    ShippingOption('2', 'Почта России (экспресс)', [LabeledPrice('Почта России (экспресс)', 148800)]),
                ShippingOption('3', 'Самовывоз', [LabeledPrice('Самовывоз', 0)])]
     query.answer(ok=True, shipping_options=options)
 
@@ -134,7 +136,8 @@ def successful_payment_callback(update: Update, context: CallbackContext):
     bd_unit.create_order(full_address, zip_code, order_info.name,
                          items_ordered[0], sum_charged, update.message.from_user.id,
                          items_ordered[1], f"'{shipping_options[int(full_update.shipping_option_id)]}'",
-                         bd_unit.generate_order_id(), f"'{shipping_info.city}'")
+                         bd_unit.generate_order_id(), f"'{shipping_info.city}'",
+                         phone_number)
     send_message(update.effective_user.id, 'Спасибо за покупку')
 
 
