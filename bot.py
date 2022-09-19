@@ -12,11 +12,11 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
 from telegram_bot_pagination import InlineKeyboardPaginator
 from bd_control import bdcontroller
 from keyboard_controller import KeyboardController
-
+from otpravka import otpravka
 kb_unit = KeyboardController()
 bd_unit = bdcontroller()
 load_dotenv()
-
+otp_unit = otpravka()
 # добавляем админов по айди из .env
 # amdins = 123456789 123456789
 ADMINS = os.getenv('admins').split()
@@ -96,18 +96,24 @@ def kepka_shipping(update: Update, context: CallbackContext) -> None:
     """Answers the ShippingQuery with ShippingOptions"""
     query = update.shipping_query
     country_code = query.shipping_address.country_code
+    index = query.shipping_address.post_code
+
+    # print(f'SHIPPING HERE {query}')
     # check the payload, is this from your bot?
     if (query.invoice_payload != 'kepo4ka') or country_code != 'RU':
         # answer False pre_checkout_query
         query.answer(ok=False, error_message='Что-то пошло не так...')
-        return
-    print(f'SHIPPING HERE {query}')
+    try:
+        print(otp_unit.get_price(index))
+        tariff = otp_unit.get_price(index)
+    except:
+        query.answer(ok=False, error_message='попробуйте сделать заказ снова')
+    # print(f'SHIPPING HERE {query}')
     # First option has a single LabeledPrice
-    options = [ShippingOption('1', 'Почта России', [LabeledPrice('Почта России', 9000)]),
+    options = [ShippingOption('1', f'Почта России {tariff[0]}', [LabeledPrice('Почта России, ', tariff[1])]),
             #    ShippingOption('2', 'Почта России (экспресс)', [LabeledPrice('Почта России (экспресс)', 148800)]),
                ShippingOption('3', 'Самовывоз', [LabeledPrice('Самовывоз', 0)])]
     query.answer(ok=True, shipping_options=options)
-
 
 
 def precheckout_callback(update: Update, context: CallbackContext) -> None:
@@ -121,7 +127,6 @@ def precheckout_callback(update: Update, context: CallbackContext) -> None:
         #TODO: Запилить проверку курьерской доставки по Мск
         query.answer(ok=True)
 
-
 def successful_payment_callback(update: Update, context: CallbackContext):
     full_update = update.message.successful_payment
     order_info = full_update.order_info
@@ -129,6 +134,7 @@ def successful_payment_callback(update: Update, context: CallbackContext):
     full_address = f'{shipping_info.street_line1}, {shipping_info.street_line2}'
     items_ordered = items_for_order[full_update.invoice_payload]
     sum_charged = f'{int(full_update.total_amount/100)}.{str(full_update.total_amount)[-2:]}'
+    phone_number = ...
     # print(f'AFTER PAY {update.message.successful_payment}')
     # print('--------')
     zip_code = shipping_info.post_code
