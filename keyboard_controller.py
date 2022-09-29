@@ -19,6 +19,7 @@ class KeyboardController():
 
     def generate_full_order(self, order_id):
         order_details = bd_unit.get_order_info(order_id)
+        print(f'ORDER DETAILS HERE: {order_details}')
         return(f'Город: {order_details[0]}\nАдрес: {order_details[1]}\n'
         f'Индекс: {order_details[2]}\n'
         f'Имя: {order_details[3]}\n'
@@ -28,12 +29,15 @@ class KeyboardController():
 
 
     def admin_order_info(self, order_id):
-        return([
-            [InlineKeyboardButton('отметить как отправленный', callback_data=f'shipped_out#{order_id}#True')],
+        keyboard = [
+            [InlineKeyboardButton('создать отправление', callback_data=f'create_otpravka#{order_id}')],
             [InlineKeyboardButton('отметить как неотправленный', callback_data=f'shipped_out#{order_id}#False')],
             [InlineKeyboardButton('вернуться к новым заказам', callback_data=f'unsent_page#1')],
-            [InlineKeyboardButton('завершить сессию', callback_data=f'close_session')]
-                    ])
+            [InlineKeyboardButton('завершить сессию', callback_data=f'close_session')]]
+        if not bd_unit.check_sent(order_id):
+            return(keyboard)
+        else:
+            keyboard[0] = [InlineKeyboardButton('отметить как отправленный', callback_data=f'shipped_out#{order_id}#True')]
 
     def build_orders_keyboard(self, orders):
         keyboard = []

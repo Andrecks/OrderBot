@@ -134,8 +134,8 @@ def successful_payment_callback(update: Update, context: CallbackContext):
     full_address = f'{shipping_info.street_line1}, {shipping_info.street_line2}'
     items_ordered = items_for_order[full_update.invoice_payload]
     sum_charged = f'{int(full_update.total_amount/100)}.{str(full_update.total_amount)[-2:]}'
-    phone_number = ...
-    # print(f'AFTER PAY {update.message.successful_payment}')
+    phone_number = order_info.phone_number
+    # print(f'AFTER PAY {order_info}')
     # print('--------')
     zip_code = shipping_info.post_code
     shipping_option = shipping_options[int(update.message.successful_payment.shipping_option_id)]
@@ -209,11 +209,24 @@ def set_order_shipped_out(update: Update, context: CallbackContext):
             bd_unit.set_shipped_out(order_id, shipped_flag)
             update.callback_query.edit_message_text(f'заказ #{order_id} отмечен как неотправленный', reply_markup=reply_markup)
 
+
 def close_session(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
 
     if str(user_id) in ADMINS:
         update.callback_query.edit_message_reply_markup(reply_markup=None)
+
+def create_otpravka(update: Update, context: CallbackContext):
+
+    query =  update.callback_query
+    user_id = update.effective_user.id
+ 
+    if str(user_id) in ADMINS:
+        order_id = int(query.data.split('#')[1])
+        update.callback_query.delete_message()
+        print(bd_unit.get_full_order_info(order_id))
+
+        
 
 def main() -> None:
     """Run the bot."""
@@ -230,6 +243,7 @@ def main() -> None:
     dispatcher.add_handler(CallbackQueryHandler(get_full_order_info, pattern=r'order#'))
     dispatcher.add_handler(CallbackQueryHandler(set_order_shipped_out, pattern=r'shipped_out#'))
     dispatcher.add_handler(CallbackQueryHandler(close_session, pattern=r'close_session'))
+    dispatcher.add_handler(CallbackQueryHandler(create_otpravka, pattern=r'create_otpravka#'))
     # dispatcher.add_handler(MessageHandler(filters.successfu))
     # Run the bot until the user presses Ctrl-C
     updater.start_polling()

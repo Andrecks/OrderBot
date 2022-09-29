@@ -1,0 +1,20 @@
+{
+"postoffice-code": 630201,
+"address-type-to": "DEFAULT",
+"given-name": "pass",
+"house-to": "23",
+"index-to": 101000,
+"mail-category": "WITH_DECLARED_VALUE_AND_CASH_ON_DELIVERY",
+"mail-direct": 643,
+"mail-type": "ONLINE_PARCEL",
+"mass": 1000,
+"payment-method": "CASHLESS",
+"middle-name": "Петрович",
+"order-num": "test",
+"place-to": "Санкт-Петербург",
+"region-to": "Санкт-Петербург",
+"street-to": "ул Коллонтай",
+"surname": "Петров",
+"tel-address": 79065555555,
+"transport-type": "SURFACE"
+}

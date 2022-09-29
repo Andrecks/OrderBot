@@ -3,6 +3,6 @@
 	"mail-category": "ORDINARY",
 	"mail-type": "ONLINE_PARCEL",
 	"mail-direct": 643,
-	"mass": 1500,
+	"mass": 1000,
 	"courier": true
 }

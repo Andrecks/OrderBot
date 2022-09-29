@@ -41,8 +41,14 @@ class bdcontroller:
         self.conn.commit()
         return(f'поменяли заказ №{order_id} на {flag}')
 
+    def check_sent(self, order_id):
+        self.cur.execute(f'SELECT shipped_out FROM orders WHERE order_id = {order_id}')
+        self.conn.commit()
+        return self.cur.fetchone()[0]
+
+
 # biba = bdcontroller()
-# print(biba.set_shipped_out(1, False))
+# print(biba.check_sent(1)[0])
 
 # biba.create_order(
 #     'adress',

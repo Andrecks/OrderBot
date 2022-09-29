@@ -14,6 +14,11 @@ class otpravka():
     PR_TOKEN = os.getenv('OTPRAVKA_TOKEN')
     PR_KEY = os.getenv('OTPRAVKA_KEY')
     url = 'https://otpravka-api.pochta.ru/1.0/tariff'
+    headers = {
+        'Authorization': f'AccessToken {PR_TOKEN}',
+        'X-User-Authorization': f'Basic {PR_KEY}',
+        'Content-Type': 'application/json;charset=UTF-8'
+    }
 
     @retry(tries=5, delay=1)
     def get_price(self, index_to):
@@ -21,12 +26,7 @@ class otpravka():
         data = json.load(file)
         data['index-to'] = index_to
         print(data)
-        headers = {
-        'Authorization': f'AccessToken {PR_TOKEN}',
-        'X-User-Authorization': f'Basic {PR_KEY}',
-        'Content-Type': 'application/json;charset=UTF-8'
-        }
-        response = requests.post(self.url, headers=headers, json=data).json()
+        response = requests.post(self.url, headers=self.headers, json=data).json()
         return (self.plural_days(response['delivery-time']['max-days'] + 2), response['total-rate'])
 
     def plural_days(self, n):
@@ -40,6 +40,8 @@ class otpravka():
 
         return str(n) + ' ' + days[p]
 
+    def create_order(self, name, surname):
+        pass
 # bibo = otpravka()
 # # try:
 # print(bibo.get_price('117342'))
